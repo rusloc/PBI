@@ -1,3 +1,8 @@
+import requests
+import json
+from datetime import datetime as dt
+from datetime import timedelta as td
+
 class PowerBIClient:
     
     def __init__(self, client_key, client_secret, workspace_id, tenant_id):
@@ -44,7 +49,7 @@ class PowerBIClient:
 
         reports_url = f"{self.api_url}/groups/{self.workspace_id}/reports"
         response = requests.get(reports_url, headers=headers)
-
+        
         if response.status_code == 200:
             if short:
                 # filter out Usage metrics reports (hidden reports in a workspace)
@@ -90,10 +95,11 @@ class PowerBIClient:
         else:
             return f"Failed to retrieve datasets: {response.text}"
 
-    def get_report_users(self, report_id):
+    def get_report_users(self, report_id, short = True):
         
         """
             Retrieve a list of users who have access to a specific Power BI report.
+            SHORT: returns short format (parsed JSON response). 
         """
         
         url = f'https://api.powerbi.com/v1.0/myorg/admin/reports/{report_id}/users'
@@ -106,18 +112,37 @@ class PowerBIClient:
         response = requests.get(url, headers=headers)
     
         if response.status_code == 200:
-            
+
             users = response.json().get('value', [])
-            return users
+            
+            if short:
+                
+                usersShort = []
+                
+                for user in users:
+
+                    item = {
+                            'name': user.get('displayName')
+                            ,'email': user.get('emailAddress')
+                            ,'rights': user.get('appUserAccessRight')
+                    }
+
+                    usersShort.append(item)
+
+                return usersShort
+                
+            else:
+                return users
             
         else:
             return f"Failed to retrieve report users: {response.status_code} - {response.text}"
 
 
-    def get_app_users(self, appId):
+    def get_app_users(self, appId, short = True):
         
         """
             Returns a list of users that have access to the specified app.
+            SHORT: returns short format (parsed JSON response). 
         """
 
         url = f'https://api.powerbi.com/v1.0/myorg/admin/apps/{appId}/users'
@@ -132,7 +157,25 @@ class PowerBIClient:
         if response.status_code == 200:
             
             users = response.json().get('value', [])
-            return users
+
+            if short:
+                
+                usersShort = []
+                
+                for user in users:
+
+                    item = {
+                            'name': user.get('displayName')
+                            ,'email': user.get('emailAddress')
+                            ,'rights': user.get('appUserAccessRight')
+                    }
+
+                    usersShort.append(item)
+
+                return usersShort
+                
+            else:
+                return users
             
         else:
             return f"Failed to retrieve report users: {response.status_code} - {response.text}"
@@ -356,3 +399,4 @@ class PowerBIClient:
             
             for line in txt[1]:
                 _file.write(line)
+                
