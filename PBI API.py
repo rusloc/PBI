@@ -13,6 +13,8 @@ class PowerBIClient:
         self.token_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
         self.api_url = "https://api.powerbi.com/v1.0/myorg"
         self.access_token = self.get_access_token()
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
     
     def get_access_token(self):
         
@@ -35,6 +37,8 @@ class PowerBIClient:
             
         else:
             raise Exception(f"Failed to retrieve access token: {response.text}")
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
     def get_reports(self, short = True):
         
@@ -64,6 +68,8 @@ class PowerBIClient:
                 
         else:
             return (f"Failed to retrieve reports: {response.text}")
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
     
     def get_datasets(self, short = True):
         
@@ -94,6 +100,8 @@ class PowerBIClient:
                 
         else:
             return f"Failed to retrieve datasets: {response.text}"
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
     def get_report_users(self, report_id, short = True):
         
@@ -137,16 +145,17 @@ class PowerBIClient:
         else:
             return f"Failed to retrieve report users: {response.status_code} - {response.text}"
 
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
-    def get_app_users(self, appId, short = True):
-        
+    def get_app_users(self, appId, short=True, file=False):
         """
             Returns a list of users that have access to the specified app.
-            SHORT: returns short format (parsed JSON response). 
+            SHORT: returns short format (parsed JSON response).
+            FILE: if True, writes the results to a file named '__app_users__.txt'.
         """
-
+    
         url = f'https://api.powerbi.com/v1.0/myorg/admin/apps/{appId}/users'
-        
+    
         headers = {
             'Authorization': f'Bearer {self.access_token}',
             'Content-Type': 'application/json'
@@ -155,31 +164,44 @@ class PowerBIClient:
         response = requests.get(url, headers=headers)
     
         if response.status_code == 200:
-            
+    
             users = response.json().get('value', [])
-
+    
             if short:
-                
+    
                 usersShort = []
-                
+    
                 for user in users:
-
+    
                     item = {
-                            'name': user.get('displayName')
-                            ,'email': user.get('emailAddress')
-                            ,'rights': user.get('appUserAccessRight')
+                        'name': user.get('displayName'),
+                        'email': user.get('emailAddress'),
+                        'rights': user.get('appUserAccessRight')
                     }
-
+    
                     usersShort.append(item)
+    
+                if file:
+                    with open('__app_users__.txt', 'w') as f:
+                        f.write("name|email|rights\n")  # Add CSV header
+                        for user in usersShort:
+                            f.write(f"{user['name']}|{user['email']}|{user['rights']}\n")
+                    return f"Results written to __app_users__.txt"
 
                 return usersShort
-                
+    
             else:
+                if file:
+                    with open('__app_users__.txt', 'w') as f:
+                        f.write(response.text)
+                    return f"Results written to __app_users__.txt"
+    
                 return users
-            
+    
         else:
             return f"Failed to retrieve report users: {response.status_code} - {response.text}"
 
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
     def get_schedule(self, datasetId = None):
        
@@ -205,6 +227,8 @@ class PowerBIClient:
                     }
         else:
             raise Exception(f"Failed to retrieve datasets: {response.text}")
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
     def get_refreshInfo(self, datasetID = None, short = True):
         
@@ -243,6 +267,8 @@ class PowerBIClient:
             
         else:
             return Exception(f"Failed to retrieve refresh info: {response.text}")
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
         
     def get_refreshInfoAll(self, short = True):
         
@@ -300,6 +326,8 @@ class PowerBIClient:
         
         return resultAll
 
+# -----------------------------------------------------------------------------------------------------------------------------------------
+
     def refresh_dataset(self, dataset_id):
         
         """Refresh specified dataset in the Power BI workspace."""
@@ -317,6 +345,8 @@ class PowerBIClient:
             
         else:
             return f"Failed to start dataset refresh: {response.text}"
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
     def query_dataset(self, dataset_id, query = None, file = False):
         
@@ -375,6 +405,8 @@ class PowerBIClient:
         else:
             return f"Failed to query dataset: {response.text}"
 
+# -----------------------------------------------------------------------------------------------------------------------------------------
+
     def time(self, delta):
         
         '''
@@ -386,6 +418,8 @@ class PowerBIClient:
         minutes, seconds = divmod(remainder, 60)
         
         return f'{hours:02}:{minutes:02}:{seconds:02}'
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
     def write_response(self, txt):
 
@@ -399,4 +433,3 @@ class PowerBIClient:
             
             for line in txt[1]:
                 _file.write(line)
-                
